@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31424.327
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "uasCitra_MKB", "uasCitra_MKB\uasCitra_MKB.csproj", "{9BFAF03A-8164-457D-B15E-9D03071549A4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9BFAF03A-8164-457D-B15E-9D03071549A4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9BFAF03A-8164-457D-B15E-9D03071549A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9BFAF03A-8164-457D-B15E-9D03071549A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9BFAF03A-8164-457D-B15E-9D03071549A4}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2146E927-88E1-4DB5-9E75-21A8079E2CFF}
+	EndGlobalSection
+EndGlobal
