@@ -12,6 +12,12 @@ using AForge;
 using AForge.Imaging;
 using AForge.Imaging.Filters;
 
+// video libraries
+using AForge.Video;
+using AForge.Video.DirectShow;
+using System.Collections;
+
+
 namespace uasCitra_MKB
 {
     public partial class Form1 : Form
@@ -38,6 +44,16 @@ namespace uasCitra_MKB
 
         // pilihan channel
         int pilChannel = 1;
+
+        // video global variables
+        private FilterInfoCollection videoDevices;
+        private VideoCaptureDevice videoDevice;
+        private ArrayList listCamera = new ArrayList();
+        Bitmap detectedImage = null;
+
+
+        bool cameraUsed = false;
+
 
         public Form1()
         {
@@ -100,6 +116,7 @@ namespace uasCitra_MKB
                 labelMin1.Text = string.Format("Ymin : {0}", Ymin);
                 YCbCrFiltering(sourceImage);
             }
+            trackObject();
 
         }
 
@@ -128,7 +145,9 @@ namespace uasCitra_MKB
                 labelMax2.Text = string.Format("Ymax : {0}", Ymax);
                 YCbCrFiltering(sourceImage);
             }
-            
+            trackObject();
+
+
         }
 
         private void trackBarMin2_Scroll(object sender, EventArgs e)
@@ -155,6 +174,7 @@ namespace uasCitra_MKB
                 labelMin2.Text = string.Format("Cbmin : {0}", Cbmin);
                 YCbCrFiltering(sourceImage);
             }
+            trackObject();
         }
 
 
@@ -182,6 +202,7 @@ namespace uasCitra_MKB
                 labelMax2.Text = string.Format("Cbmax : {0}", Cbmax);
                 YCbCrFiltering(sourceImage);
             }
+            trackObject();
         }
 
         private void trackBarMin3_Scroll(object sender, EventArgs e)
@@ -208,6 +229,7 @@ namespace uasCitra_MKB
                 labelMin3.Text = string.Format("Crmin : {0}", Crmin);
                 YCbCrFiltering(sourceImage);
             }
+            trackObject();
         }
 
         private void trackBarMax3_Scroll(object sender, EventArgs e)
@@ -234,6 +256,7 @@ namespace uasCitra_MKB
                 labelMax3.Text = string.Format("Crmax : {0}", Crmax);
                 YCbCrFiltering(sourceImage);
             }
+            trackObject();
         }
 
         // pilihan channel filter
@@ -255,6 +278,7 @@ namespace uasCitra_MKB
             labelReset(pilChannel);
             trackBarEnable(true);
             groupBox5.Text = "HSL Image Control Function";
+
         }
 
         private void radioButton3_CheckedChanged(object sender, EventArgs e)
@@ -265,6 +289,12 @@ namespace uasCitra_MKB
             labelReset(pilChannel);
             trackBarEnable(true);
             groupBox5.Text = "YCbCR Image Control Function";
+
+        }
+
+        private void groupBox3_Enter(object sender, EventArgs e)
+        {
+
         }
 
         //////////////////////////
@@ -307,6 +337,12 @@ namespace uasCitra_MKB
                 trackBarMax3.Maximum = 50;
             }
 
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            OpenCamera();
+            cameraUsed = true;
         }
 
         private void trackBarReset(int filterChannel)
@@ -409,47 +445,140 @@ namespace uasCitra_MKB
 
         }
 
-        private void button5_Click(object sender, EventArgs e)
+        private void videoSourcePlayer1_NewFrame(object sender, ref Bitmap image)
         {
-            if(pilChannel == 1)
+            try
             {
-                if (RGBImage == null) return;
-                track = RGBImage;
-            }
-            else if(pilChannel == 2)
-            {
-                if (HSLImage == null) return;
-                track = HSLImage;
-            }
-            else if(pilChannel == 3)
-            {
-                if (YCbCrImage == null) return;
-                track = YCbCrImage;
-            }
+                Bitmap histogramImage = image.Clone() as Bitmap;
 
+                sourceImage = image.Clone() as Bitmap;
+                
+                if (pilChannel == 1)
+                {
+                    //detect the image
+                    RGBFiltering(image.Clone() as Bitmap);
+                    //traking the image
+                    objectTracking(image.Clone() as Bitmap, RGBImage);
+                }
+                else if(pilChannel == 2)
+                {
+                    HSLFiltering(image.Clone() as Bitmap);
+                    //traking the image
+                    objectTracking(image.Clone() as Bitmap, HSLImage);
+                }
+                else if(pilChannel == 3)
+                {
+                    YCbCrFiltering(image.Clone() as Bitmap);
+                    //traking the image
+                    objectTracking(image.Clone() as Bitmap, YCbCrImage);
+                }
 
-            
-            Bitmap tempImage = new Bitmap(sourceImage);
-            pictureBox2.Image = tempImage;
+                hitungHistogram(histogramImage);
+
+            }
+            catch
+            {
+            }
+        }
+
+        private void objectTracking(Bitmap srcImage, Bitmap filterImage)
+        {
+            detectedImage = filterImage;
+
+            if (srcImage == null || detectedImage == null) return;
+            //copy detected image to the new one
+            Bitmap newImage = (Bitmap)detectedImage.Clone();
+            //blob counter on the detected image
             BlobCounter bc = new BlobCounter();
-            bc.MinHeight = 5;
-            bc.MinWidth = 5;
+            bc.MinHeight = 20;
+            bc.MinWidth = 20;
             bc.FilterBlobs = true;
             bc.ObjectsOrder = ObjectsOrder.Area;
-            bc.ProcessImage(track);
+            bc.ProcessImage(newImage);
             Rectangle[] rects = bc.GetObjectsRectangles();
             foreach (Rectangle recs in rects)
+            {
                 if (rects.Length > 0)
                 {
-                    Rectangle objectRect = rects[0]; //= recs;
-                    Graphics graph = Graphics.FromImage(tempImage);
-                    using (Pen pen = new Pen(Color.FromArgb(255, 0, 0), 2))
+                    Rectangle objectRect = rects[0];
+                    Graphics graph = Graphics.FromImage(srcImage);
+                    using (Pen pen = new Pen(Color.FromArgb(255, 0, 0), 10))
                     {
                         graph.DrawRectangle(pen, objectRect);
                     }
                     graph.Dispose();
                 }
+            }
+            //draw tracked object on picture box
+            pictureBox2.Image = srcImage;
         }
+
+        // open camera
+        private void OpenCamera()
+        {
+            try
+            {
+                usbcamera = comboBox1.SelectedIndex.ToString();
+                videoDevices = new FilterInfoCollection(FilterCategory.VideoInputDevice);
+
+                if (videoDevices.Count != 0)
+                {
+                    // add all devices to combo
+                    foreach (FilterInfo device in videoDevices)
+                    {
+                        listCamera.Add(device.Name);
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Camera devices found");
+                }
+
+                videoDevice = new VideoCaptureDevice(videoDevices[Convert.ToInt32(usbcamera)].MonikerString);
+                OpenVideoSource(videoDevice);
+            }
+            catch (Exception err)
+            {
+                MessageBox.Show(err.ToString());
+            }
+
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            videoDevices = new FilterInfoCollection(FilterCategory.VideoInputDevice);
+            if (videoDevices.Count != 0)
+            {
+                // add all devices to combo
+                foreach (FilterInfo device in videoDevices)
+                {
+                    comboBox1.Items.Add(device.Name);
+                }
+            }
+            else
+            {
+                comboBox1.Items.Add("No DirectShow devices found");
+            }
+            comboBox1.SelectedIndex = 0;
+        }
+
+        private void Form1_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            if (videoDevice != null && videoDevice.IsRunning)
+                videoDevice.Stop(); 
+        }
+
+        private void videoSourcePlayer1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+        }
+
+
 
 
         // ---- RGB FILTER -----
@@ -462,12 +591,13 @@ namespace uasCitra_MKB
             filter.Green = new IntRange(Gmin, Gmax);
             filter.Blue = new IntRange(Bmin, Bmax);
             // apply the filter
-            RGBImage = filter.Apply(sourceImage);
+            RGBImage = filter.Apply(srcImage);
+            pictureBox3.Image = RGBImage;
             pictureBox1.Image = RGBImage;
         }
 
         // ---- HSL FILTER ----
-        private void HSLFiltering(Bitmap sourceImage)
+        private void HSLFiltering(Bitmap srcImage)
         {
             // create filter
             HSLFiltering filter = new HSLFiltering();
@@ -475,8 +605,9 @@ namespace uasCitra_MKB
             filter.Saturation = new Range(Smin, Smax);
             filter.Luminance = new Range(Lmin, Lmax);
             // apply the filter
-            HSLImage = filter.Apply(sourceImage);
+            HSLImage = filter.Apply(srcImage);
             pictureBox1.Image = HSLImage;
+            pictureBox3.Image = HSLImage;
         }
 
         // ---- YCbCr FILTER ----
@@ -488,9 +619,10 @@ namespace uasCitra_MKB
             filter.Y = new Range(Ymin, Ymax);
             filter.Cb = new Range(Cbmin, Cbmax);
             filter.Cr = new Range(Crmin, Crmax);
-            YCbCrImage = filter.Apply(sourceImage);
+            YCbCrImage = filter.Apply(srcImage);
             //draw the picture
             pictureBox1.Image = YCbCrImage;
+            pictureBox3.Image = YCbCrImage;
         }
 
         // ---- CLOSE BUTTON ----
@@ -503,13 +635,17 @@ namespace uasCitra_MKB
         private void button4_Click(object sender, EventArgs e)
         {
             pictureBox1.Image = sourceImage;
-            pictureBox2.Image = null;
+            pictureBox2.Image = sourceImage;
+
             trackBarEnable(false);
 
             // init
             trackBarMax1.Maximum = 255;
             trackBarMax2.Maximum = 255;
             trackBarMax3.Maximum = 255;
+            trackBarMin1.Minimum = 0;
+            trackBarMin2.Minimum = 0;
+            trackBarMin3.Minimum = 0;
 
             // trackbar reset
             trackBarMin1.Value = 0;
@@ -524,7 +660,7 @@ namespace uasCitra_MKB
             // reset radio
             radioButton1.Checked = false;
             radioButton2.Checked = false;
-            radioButton2.Checked = false;
+            radioButton3.Checked = false;
 
             // reset label
             labelReset();
@@ -554,8 +690,24 @@ namespace uasCitra_MKB
         }
 
 
-
         // ---- HISTOGRAM ----
+        private void hitungHistogram(Bitmap histogramImage)
+        {
+            if (histogramImage == null) return;
+
+
+
+            ImageStatistics stat = new ImageStatistics(histogramImage);
+
+            int[] redStat = stat.Red.Values;
+            int[] greenStat = stat.Blue.Values;
+            int[] blueStat = stat.Blue.Values;
+            int[] gab = gabungHistogram(redStat, greenStat, blueStat);
+            histogram1.Color = Color.Navy;
+            histogram1.Values = gab;
+
+        }
+
         int[] gabungHistogram(int[] r, int[] g, int[] b)
         {
             int[] c = new int[256 * 3];
@@ -568,6 +720,100 @@ namespace uasCitra_MKB
             return c;
         }
 
+        // ---- TRACK OBJECT ----
+        private void trackObject()
+        {
+            if (!cameraUsed)
+            {
+                if (pilChannel == 1)
+                {
+                    if (RGBImage == null) return;
+                    track = RGBImage;
+                }
+                else if (pilChannel == 2)
+                {
+                    if (HSLImage == null) return;
+                    track = HSLImage;
+                }
+                else if (pilChannel == 3)
+                {
+                    if (YCbCrImage == null) return;
+                    track = YCbCrImage;
+                }
+
+                Bitmap tempImage = new Bitmap(sourceImage);
+                pictureBox2.Image = tempImage;
+                BlobCounter bc = new BlobCounter();
+                bc.MinHeight = 5;
+                bc.MinWidth = 5;
+                bc.FilterBlobs = true;
+                bc.ObjectsOrder = ObjectsOrder.Area;
+                bc.ProcessImage(track);
+                Rectangle[] rects = bc.GetObjectsRectangles();
+                foreach (Rectangle recs in rects)
+                    if (rects.Length > 0)
+                    {
+                        Rectangle objectRect = rects[0]; //= recs;
+                        Graphics graph = Graphics.FromImage(tempImage);
+                        using (Pen pen = new Pen(Color.FromArgb(255, 0, 0), 2))
+                        {
+                            graph.DrawRectangle(pen, objectRect);
+                        }
+                        graph.Dispose();
+                    }
+            }
+
+        }
+
+        // ---- video source player ----
+        // usb camera definition
+        private static string _usbcamera;
+        public string usbcamera
+        {
+            get { return _usbcamera; }
+            set { _usbcamera = value; }
+        }
+        // opening the video source
+        private void OpenVideoSource(IVideoSource source)
+        {
+            try
+            {
+                // set busy cursor
+                this.Cursor = Cursors.WaitCursor;
+                // stop current video source
+                CloseCurrentVideoSource();
+                // start new video source
+                videoSourcePlayer1.VideoSource = source;
+                videoSourcePlayer1.Start();
+                this.Cursor = Cursors.Default;
+            }
+            catch { }
+        }
+
+        // closing the video source
+        public void CloseCurrentVideoSource()
+        {
+            try
+            {
+                if (videoSourcePlayer1.VideoSource != null)
+                {
+                    videoSourcePlayer1.SignalToStop();
+                    // wait ~ 3 seconds
+                    for (int i = 0; i < 30; i++)
+                    {
+                        if (!videoSourcePlayer1.IsRunning)
+                            break;
+                        System.Threading.Thread.Sleep(100);
+                    }
+                    if (videoSourcePlayer1.IsRunning)
+                    {
+                        videoSourcePlayer1.Stop();
+                    }
+                    videoSourcePlayer1.VideoSource = null;
+                }
+            }
+            catch { }
+        }
 
         // open file button
         private void button1_Click(object sender, EventArgs e)
@@ -577,8 +823,13 @@ namespace uasCitra_MKB
                 sourceImage = (Bitmap)Bitmap.FromFile(openFileDialog1.FileName);
                 pictureBox3.Image = sourceImage;
                 pictureBox1.Image = sourceImage;
+                pictureBox2.Image = sourceImage;
 
                 pictureBox3.BorderStyle = BorderStyle.FixedSingle;
+
+
+                // ---- HISTOGRAM ----
+                hitungHistogram(sourceImage);
             }
         }
     }

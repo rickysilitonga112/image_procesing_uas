@@ -39,7 +39,6 @@ namespace uasCitra_MKB
             this.radioButton2 = new System.Windows.Forms.RadioButton();
             this.radioButton1 = new System.Windows.Forms.RadioButton();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
-            this.button5 = new System.Windows.Forms.Button();
             this.button4 = new System.Windows.Forms.Button();
             this.button3 = new System.Windows.Forms.Button();
             this.groupBox5 = new System.Windows.Forms.GroupBox();
@@ -100,6 +99,7 @@ namespace uasCitra_MKB
             this.button2.TabIndex = 1;
             this.button2.Text = "Start Camera";
             this.button2.UseVisualStyleBackColor = true;
+            this.button2.Click += new System.EventHandler(this.button2_Click);
             // 
             // button1
             // 
@@ -128,6 +128,7 @@ namespace uasCitra_MKB
             this.comboBox1.Name = "comboBox1";
             this.comboBox1.Size = new System.Drawing.Size(121, 24);
             this.comboBox1.TabIndex = 0;
+            this.comboBox1.SelectedIndexChanged += new System.EventHandler(this.comboBox1_SelectedIndexChanged);
             // 
             // groupBox3
             // 
@@ -140,6 +141,7 @@ namespace uasCitra_MKB
             this.groupBox3.TabIndex = 2;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Filter Selection";
+            this.groupBox3.Enter += new System.EventHandler(this.groupBox3_Enter);
             // 
             // radioButton3
             // 
@@ -179,7 +181,6 @@ namespace uasCitra_MKB
             // 
             // groupBox4
             // 
-            this.groupBox4.Controls.Add(this.button5);
             this.groupBox4.Controls.Add(this.button4);
             this.groupBox4.Controls.Add(this.button3);
             this.groupBox4.Location = new System.Drawing.Point(12, 535);
@@ -188,16 +189,6 @@ namespace uasCitra_MKB
             this.groupBox4.TabIndex = 3;
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Control";
-            // 
-            // button5
-            // 
-            this.button5.Location = new System.Drawing.Point(46, 107);
-            this.button5.Name = "button5";
-            this.button5.Size = new System.Drawing.Size(75, 23);
-            this.button5.TabIndex = 2;
-            this.button5.Text = "Track";
-            this.button5.UseVisualStyleBackColor = true;
-            this.button5.Click += new System.EventHandler(this.button5_Click);
             // 
             // button4
             // 
@@ -351,12 +342,14 @@ namespace uasCitra_MKB
             // 
             // videoSourcePlayer1
             // 
-            this.videoSourcePlayer1.Location = new System.Drawing.Point(218, 91);
+            this.videoSourcePlayer1.Location = new System.Drawing.Point(218, 100);
             this.videoSourcePlayer1.Name = "videoSourcePlayer1";
             this.videoSourcePlayer1.Size = new System.Drawing.Size(388, 266);
             this.videoSourcePlayer1.TabIndex = 5;
             this.videoSourcePlayer1.Text = "videoSourcePlayer1";
             this.videoSourcePlayer1.VideoSource = null;
+            this.videoSourcePlayer1.NewFrame += new AForge.Controls.VideoSourcePlayer.NewFrameHandler(this.videoSourcePlayer1_NewFrame);
+            this.videoSourcePlayer1.Click += new System.EventHandler(this.videoSourcePlayer1_Click);
             // 
             // pictureBox1
             // 
@@ -428,9 +421,9 @@ namespace uasCitra_MKB
             // pictureBox3
             // 
             this.pictureBox3.Image = null;
-            this.pictureBox3.Location = new System.Drawing.Point(218, 63);
+            this.pictureBox3.Location = new System.Drawing.Point(218, 100);
             this.pictureBox3.Name = "pictureBox3";
-            this.pictureBox3.Size = new System.Drawing.Size(388, 257);
+            this.pictureBox3.Size = new System.Drawing.Size(388, 266);
             this.pictureBox3.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.pictureBox3.TabIndex = 16;
             this.pictureBox3.TabStop = false;
@@ -460,6 +453,8 @@ namespace uasCitra_MKB
             this.Controls.Add(this.groupBox1);
             this.Name = "Form1";
             this.Text = "Form1";
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.Form1_FormClosed);
+            this.Load += new System.EventHandler(this.Form1_Load);
             this.groupBox1.ResumeLayout(false);
             this.groupBox2.ResumeLayout(false);
             this.groupBox3.ResumeLayout(false);
@@ -518,7 +513,6 @@ namespace uasCitra_MKB
         private System.Windows.Forms.Label label10;
         private AForge.Controls.PictureBox pictureBox3;
         private System.Windows.Forms.OpenFileDialog openFileDialog1;
-        private System.Windows.Forms.Button button5;
     }
 }
 
